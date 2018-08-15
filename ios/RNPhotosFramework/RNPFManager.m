@@ -469,7 +469,7 @@ RCT_EXPORT_METHOD(saveAssetsToDisk:(NSDictionary *)params
                                          
                                          NSString *fullFileName = [fileRequest.dir stringByAppendingPathComponent:fileRequest.fileName];
                                          
-                                         NSData * binaryImageData = UIImagePNGRepresentation(loadedImage);
+                                         NSData * binaryImageData = UIImageJPEGRepresentation(loadedImage, 1);
                                          
                                          BOOL success = [binaryImageData writeToFile:fullFileName atomically:YES];
                                          if(success) {
