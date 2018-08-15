@@ -73,6 +73,10 @@ export default class Asset {
         return this._fetchExtraData('getAssetsResourcesMetadata', 'resourcesMetadata');
     }
 
+    getExifData() {
+        return this._fetchExtraData('getExifData', 'exif');
+    }
+
     _fetchExtraData(nativeMethod, alreadyLoadedProperty, force) {
         return new Promise((resolve, reject) => {
             if (!force && this[alreadyLoadedProperty]) {
@@ -80,6 +84,11 @@ export default class Asset {
                 //Resolve directly
                 resolve(this);
                 return;
+            }
+            if(!NativeApi[nativeMethod])
+            {
+                console.log("Method '" + nativeMethod  + "' not found", NativeApi);
+                reject();
             }
             return resolve(NativeApi[nativeMethod]([this.localIdentifier])
                 .then((metadataObjs) => {

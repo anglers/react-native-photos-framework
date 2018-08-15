@@ -173,6 +173,16 @@
 }
 
 
+
++(void)extendAssetDictWithPhotoAssetEditingExif:(NSMutableDictionary *)dictToExtend andPHAsset:(PHAsset *)asset andCompletionBlock:(void(^)(NSMutableDictionary * dict))completeBlock  {
+  __block NSMutableDictionary * dictionaryToExtendBlocked = dictToExtend;
+  [PHAssetsService requestEditingExifWithCompletionBlock:^(NSDictionary<NSString *,id> *dict) {
+    [dictionaryToExtendBlocked setObject:dict forKey:@"imageExif"];
+    completeBlock(dictionaryToExtendBlocked);
+  } andAsset:asset];
+}
+
+
 +(NSMutableArray<PHAssetWithCollectionIndex*> *) getAssetsForFetchResult:(PHFetchResult *)assetsFetchResult startIndex:(int)startIndex endIndex:(int)endIndex assetDisplayStartToEnd:(BOOL)assetDisplayStartToEnd andAssetDisplayBottomUp:(BOOL)assetDisplayBottomUp {
 
     NSMutableArray<PHAssetWithCollectionIndex *> *assets = [NSMutableArray new];
@@ -310,23 +320,51 @@
 }
 
 +(void)requestEditingMetadataWithCompletionBlock:(void(^)(NSDictionary<NSString *,id> * dict))completeBlock andAsset:(PHAsset *)asset{
-    PHImageRequestOptions *options = [PHImageRequestOptions new];
-    options.networkAccessAllowed = YES;
-    options.synchronous = NO;
-    options.version = PHImageRequestOptionsVersionOriginal;
-    PHImageManager *manager = [[PHImageManager alloc] init];
+  PHImageRequestOptions *options = [PHImageRequestOptions new];
+  options.networkAccessAllowed = YES;
+  options.synchronous = NO;
+  options.version = PHImageRequestOptionsVersionOriginal;
+  PHImageManager *manager = [[PHImageManager alloc] init];
+  
+  [manager requestImageDataForAsset:asset options:options resultHandler:^(NSData *imageData, NSString *dataUTI, UIImageOrientation orientation, NSDictionary *info){
+    CIImage *image = [CIImage imageWithData:imageData];
+    
+    NSMutableDictionary *editingDictionary = [image.properties mutableCopy];
+    if ([info objectForKey:@"PHImageFileURLKey"]) {
+      NSURL *path = [info objectForKey:@"PHImageFileURLKey"];
+      [editingDictionary setObject:[path absoluteString] forKey:@"fileUrl"];
+    }
+    
+    completeBlock(editingDictionary);
+  }];
+}
 
-    [manager requestImageDataForAsset:asset options:options resultHandler:^(NSData *imageData, NSString *dataUTI, UIImageOrientation orientation, NSDictionary *info){
-        CIImage *image = [CIImage imageWithData:imageData];
-
-        NSMutableDictionary *editingDictionary = [image.properties mutableCopy];
-        if ([info objectForKey:@"PHImageFileURLKey"]) {
-            NSURL *path = [info objectForKey:@"PHImageFileURLKey"];
-            [editingDictionary setObject:[path absoluteString] forKey:@"fileUrl"];
-        }
++(void)requestEditingExifWithCompletionBlock:(void(^)(NSDictionary<NSString *,id> * dict))completeBlock andAsset:(PHAsset *)asset{
+  PHContentEditingInputRequestOptions *inputOptions = [PHContentEditingInputRequestOptions new];
+  if(asset.mediaType == PHAssetMediaTypeImage)
+  {
+      [asset requestContentEditingInputWithOptions:inputOptions completionHandler:^(PHContentEditingInput *contentEditingInput, NSDictionary *info) {
+        CIImage *image = [CIImage imageWithContentsOfURL:contentEditingInput.fullSizeImageURL];
+        NSDictionary *exif = image.properties;
         
-        completeBlock(editingDictionary);
-    }];
+        PHImageRequestOptions *options = [PHImageRequestOptions new];
+        options.networkAccessAllowed = YES;
+        options.synchronous = NO;
+        options.version = PHImageRequestOptionsVersionOriginal;
+        PHImageManager *manager = [[PHImageManager alloc] init];
+        
+        [manager requestImageDataForAsset:asset options:options resultHandler:^(NSData *imageData, NSString *dataUTI, UIImageOrientation orientation, NSDictionary *info){
+          CIImage *image = [CIImage imageWithData:imageData];
+          
+          NSMutableDictionary *editingDictionary = [image.properties mutableCopy];
+          if ([exif count] > 0) {
+            [editingDictionary setObject:exif forKey:@"exif"];
+          }
+          
+          completeBlock(editingDictionary);
+        }];
+      }];
+  }
 }
 
 +(void)updateAssetWithParams:(NSDictionary *)params completionBlock:(void(^)(BOOL success, NSError * _Nullable error, NSString * _Nullable localIdentifier))completionBlock andAsset:(PHAsset *)asset {

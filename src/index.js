@@ -239,6 +239,10 @@ class RNPhotosFramework {
         return RNPFManager.getAssetsResourcesMetadata(assetsLocalIdentifiers);
     }
 
+    getExifData(assetsLocalIdentifiers) {
+        return RNPFManager.getImageAssetsExif(assetsLocalIdentifiers);
+    }
+
     updateAssetsWithResoucesMetadata(assets) {
         return new Promise((resolve, reject) => {
             const assetsWithoutRoesourceMetaData = assets.filter(
