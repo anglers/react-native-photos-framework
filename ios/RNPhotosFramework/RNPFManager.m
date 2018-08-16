@@ -502,7 +502,7 @@ RCT_EXPORT_METHOD(saveAssetsToDisk:(NSDictionary *)params
                                          
                                          NSString *fullFileName = [fileRequest.dir stringByAppendingPathComponent:fileRequest.fileName];
                                          
-                                         NSData * binaryImageData = UIImageJPEGRepresentation(loadedImage, 1);
+                                         NSData * binaryImageData = [self getImageBinaryDataWithExif:loadedImage andFileRequest:fileRequest];
                                          
                                          BOOL success = [binaryImageData writeToFile:fullFileName atomically:YES];
                                          if(success) {
@@ -510,6 +510,43 @@ RCT_EXPORT_METHOD(saveAssetsToDisk:(NSDictionary *)params
                                          }
                                          
                                      } andOptions:[RCTConvert NSDictionary:fileRequest.loadOptions]];
+}
+
+-(NSData *) getImageBinaryDataWithExif:(UIImage *)image andFileRequest:(PHSaveAssetFileRequest *) fileRequest
+{
+  NSData * binaryImageData = UIImageJPEGRepresentation(image, 1);
+  
+  if([fileRequest.exif count] > 0)
+  {
+    // Create source
+    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)binaryImageData, nil);
+    
+    // Target data
+    NSMutableData *dest_data = [NSMutableData data];
+    
+    // Create destination
+    CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)dest_data, kUTTypeJPEG, 1, NULL);
+
+    // Copy source to image with exif and set quality to 1 (100%)
+    [fileRequest.exif setValue:@1.0f forKey:(__bridge NSString*) kCGImageDestinationLossyCompressionQuality];
+    CGImageDestinationAddImageFromSource(destination, source, 0, (CFDictionaryRef) fileRequest.exif);
+    
+    BOOL success = CGImageDestinationFinalize(destination);
+    if(!success)
+    {
+      NSLog(@"***Could not create data from image destination ***");
+    }
+
+    CFRelease(destination);
+    CFRelease(source);
+    
+    NSLog(@"Size before: %d", (int) [binaryImageData length]);
+    NSLog(@"Size after:  %d", (int) [dest_data length]);
+    
+    return dest_data;
+  }
+  else
+    return binaryImageData;
 }
 
 -(void) writeVideoToFile:(PHSaveAssetFileRequest *)fileRequest andCompleteBLock:(assetFileSaveOperationBlock)completeBlock andProgressBlock:(fileDownloadProgressBlockSimple)progressBlock {

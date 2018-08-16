@@ -200,7 +200,7 @@ RCT_ENUM_CONVERTER_WITH_REVERSED(PHAssetResourceType, (@{
     assetRequest.dir = [RCTConvert NSString:json[@"dir"]];
     assetRequest.loadOptions = [RCTConvert NSDictionary:json[@"loadOptions"]];
     assetRequest.postProcessOptions = [RCTConvert NSDictionary:json[@"postProcessOptions"]];
-
+    assetRequest.exif = [RCTConvert NSDictionary:json[@"exif"]];
 
     if(assetRequest.dir == nil) {
         NSArray * paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);

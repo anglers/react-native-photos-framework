@@ -426,6 +426,7 @@ class RNPhotosFramework {
                         localIdentifier: asset.localIdentifier,
                         mediaType: asset.mediaType,
                         ...assetWithOption.options,
+                        exif: asset.imageExif,
                     };
                 }),
                 events: {

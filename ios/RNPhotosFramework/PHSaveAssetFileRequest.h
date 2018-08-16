@@ -14,7 +14,7 @@
 @property (strong, nonatomic) NSDictionary *loadOptions;
 @property (strong, nonatomic) NSDictionary *postProcessOptions;
 
-
+@property (strong, nonatomic) NSMutableDictionary *exif;
 
 //Only used for videos:
 @property (strong, nonatomic) PHVideoRequestOptions* videoRequestOptions;
