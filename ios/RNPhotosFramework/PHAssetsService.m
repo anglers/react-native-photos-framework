@@ -345,24 +345,13 @@
   {
       [asset requestContentEditingInputWithOptions:inputOptions completionHandler:^(PHContentEditingInput *contentEditingInput, NSDictionary *info) {
         CIImage *image = [CIImage imageWithContentsOfURL:contentEditingInput.fullSizeImageURL];
-        NSDictionary *exif = image.properties;
+        NSMutableDictionary *exif = [image.properties mutableCopy];
         
-        PHImageRequestOptions *options = [PHImageRequestOptions new];
-        options.networkAccessAllowed = YES;
-        options.synchronous = NO;
-        options.version = PHImageRequestOptionsVersionOriginal;
-        PHImageManager *manager = [[PHImageManager alloc] init];
+        // Set Exif.Orientation = 1 (fixes rotation already being processed in file)
+        NSNumber *orientation = [NSNumber numberWithInt:1];
+        [exif setObject:orientation forKey:@"Orientation"];
         
-        [manager requestImageDataForAsset:asset options:options resultHandler:^(NSData *imageData, NSString *dataUTI, UIImageOrientation orientation, NSDictionary *info){
-          CIImage *image = [CIImage imageWithData:imageData];
-          
-          NSMutableDictionary *editingDictionary = [image.properties mutableCopy];
-          if ([exif count] > 0) {
-            [editingDictionary setObject:exif forKey:@"exif"];
-          }
-          
-          completeBlock(editingDictionary);
-        }];
+        completeBlock(exif);
       }];
   }
 }
