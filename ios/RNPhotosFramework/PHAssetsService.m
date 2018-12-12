@@ -343,6 +343,8 @@
   PHContentEditingInputRequestOptions *inputOptions = [PHContentEditingInputRequestOptions new];
   if(asset.mediaType == PHAssetMediaTypeImage)
   {
+      options.networkAccessAllowed = YES;
+      
       [asset requestContentEditingInputWithOptions:inputOptions completionHandler:^(PHContentEditingInput *contentEditingInput, NSDictionary *info) {
         CIImage *image = [CIImage imageWithContentsOfURL:contentEditingInput.fullSizeImageURL];
         NSMutableDictionary *exif = [image.properties mutableCopy];
