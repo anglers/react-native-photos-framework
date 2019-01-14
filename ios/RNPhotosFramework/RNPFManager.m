@@ -586,20 +586,27 @@ RCT_EXPORT_METHOD(saveAssetsToDisk:(NSDictionary *)params
                      NSLog(@"Error removing file at path: %@", error.localizedDescription);
                  }
              }
-             NSURL *fileURL = [NSURL fileURLWithPath:fullFileName];
-
-             AVURLAsset *avurlasset = (AVURLAsset*) avasset;
-
-             if ([[NSFileManager defaultManager] copyItemAtURL:avurlasset.URL
-                                                         toURL:fileURL
-                                                         error:&error]) {
-                 if(error) {
-                     return completeBlock(NO, error, fileRequest.localIdentifier, nil);
-                 }else {
-                     progressBlock(100);
-                     return completeBlock(YES, nil, fileRequest.localIdentifier, fullFileName);
+             
+             NSURL *destURL = [NSURL fileURLWithPath:fullFileName];
+           
+             AVAssetExportSession *exporter = [[AVAssetExportSession alloc] initWithAsset:avasset presetName:AVAssetExportPresetHighestQuality];
+             exporter.outputURL = destURL;
+             exporter.outputFileType = AVFileTypeQuickTimeMovie;
+             exporter.shouldOptimizeForNetworkUse = YES;
+           
+             [exporter exportAsynchronouslyWithCompletionHandler:^{
+               dispatch_async(dispatch_get_main_queue(), ^{
+                 if (exporter.status == AVAssetExportSessionStatusCompleted) {
+                   
+                   return completeBlock(YES, nil, fileRequest.localIdentifier, fullFileName);
                  }
-             }
+                 else if (exporter.status == AVAssetExportSessionStatusFailed)
+                 {
+                   NSError *error = [NSError alloc];
+                   return completeBlock(NO, error, fileRequest.localIdentifier, nil);
+                 }
+               });
+             }];
          }
      }];
 }
