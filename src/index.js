@@ -410,6 +410,12 @@ class RNPhotosFramework {
             return RNPFManager.saveAssetsToDisk({
                 media: assetsWithOptions.map(assetWithOption => {
                     const { asset } = assetWithOption;
+
+                    // resourceMetadata zou er moeten zijn, maar mist, geen idee waarom, dit komt rechtstreeks vanuit native
+                    // logging toegevoegd zodat we mogelijk met Sentry kunnen achterhalen wat voor soort files dit zijn
+                    if(!assetWithOption.asset.resourcesMetadata)
+                        console.log(JSON.stringify(assetWithOption.asset));
+
                     const resourceMetadata =
                         assetWithOption.asset.resourcesMetadata[0];
                     const fileName =
