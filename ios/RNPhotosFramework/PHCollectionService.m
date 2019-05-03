@@ -1,13 +1,13 @@
-#import "PHCollectionService.h"
 #import <React/RCTConvert.h>
-#import "RCTConvert+RNPhotosFramework.h"
-#import "PHFetchOptionsService.h"
-#import "PHCache.h"
-#import <React/RCTConvert.h>
-#import "RCTConvert+RNPhotosFramework.h"
-#import "RNPFHelpers.h"
 #import <React/RCTImageLoader.h>
+#import "RCTConvert+RNPhotosFramework.h"
+
 #import "PHAssetsService.h"
+#import "PHCache.h"
+#import "PHCollectionService.h"
+#import "PHFetchOptionsService.h"
+#import "RNPFHelpers.h"
+
 
 @import Photos;
 @implementation PHCollectionService
@@ -187,7 +187,13 @@ static id ObjectOrNull(id object)
         }
     }
 
-    [albumDictionary setObject:collection.localizedTitle forKey:@"title"];
+    if(collection.localizedTitle != nil) // Get localized title
+        [albumDictionary setObject:collection.localizedTitle forKey:@"title"];
+    else if ([collection valueForKey:@"title"] != nil) // When localized title failes, get the value of the key 'title'
+        [albumDictionary setObject:[collection valueForKey:@"title"] forKey:@"title"];
+    else // When all else fails...
+        [albumDictionary setObject:@"" forKey:@"title"];
+
     [albumDictionary setObject:collection.localIdentifier forKey:@"localIdentifier"];
     
     NSMutableArray *permittedOperations = [NSMutableArray arrayWithCapacity:7];
