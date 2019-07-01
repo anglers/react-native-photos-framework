@@ -148,6 +148,7 @@ RCT_EXPORT_METHOD(getAssets:(NSDictionary *)params
     [self prepareAssetsForDisplayWithParams:params andAssets:assets];
     NSInteger assetCount = assetsFetchResult.count;
     BOOL includesLastAsset = assetCount == 0 || endIndex >= (assetCount -1);
+        
     return resolve(@{
                      @"assets" : [PHAssetsService assetsArrayToUriArray:assets andincludeMetadata:includeMetadata andIncludeAssetResourcesMetadata:includeResourcesMetadata],
                      @"includesLastAsset" : @(includesLastAsset)
@@ -946,11 +947,16 @@ RCT_EXPORT_METHOD(removeAssetsFromAlbum:(NSDictionary *)params
         CGFloat prepareScale = [RCTConvert CGFloat:params[@"prepareScale"]];
         PHCachingImageManager *cacheManager = [PHCachingImageManagerInstance sharedCachingManager];
         
+        PHImageRequestOptions *_options = [[PHImageRequestOptions alloc] init];
+        _options.synchronous = false;
+        _options.resizeMode = PHImageRequestOptionsResizeModeExact;
+        _options.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
+
         if(prepareForSizeDisplay.width != 0 && prepareForSizeDisplay.height != 0) {
             if(prepareScale < 0.1) {
                 prepareScale = 2;
             }
-            [cacheManager startCachingImagesForAssets:[PHAssetWithCollectionIndex toAssetsArray:assets] targetSize:CGSizeApplyAffineTransform(prepareForSizeDisplay, CGAffineTransformMakeScale(prepareScale, prepareScale)) contentMode:PHImageContentModeAspectFill options:nil];
+            [cacheManager startCachingImagesForAssets:[PHAssetWithCollectionIndex toAssetsArray:assets] targetSize:CGSizeApplyAffineTransform(prepareForSizeDisplay, CGAffineTransformMakeScale(prepareScale, prepareScale)) contentMode:PHImageContentModeAspectFill options:_options];
         }
     }
 }
