@@ -118,6 +118,21 @@ RCT_EXPORT_METHOD(requestAuthorization:(RCTPromiseResolveBlock)resolve
 }
 
 
+RCT_EXPORT_METHOD(stopCachingImagesForAllAssets:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    PHCachingImageManager *cacheManager = [PHCachingImageManagerInstance sharedCachingManager];
+    [cacheManager stopCachingImagesForAllAssets];
+    
+    [[PHCache sharedPHCache] cleanCache];
+    if(self.changeObserver) {
+        [self.changeObserver removeChangeObserver];
+    }
+    
+    resolve(@{});
+}
+
+
 /*
  GetAssets
  */
@@ -948,9 +963,7 @@ RCT_EXPORT_METHOD(removeAssetsFromAlbum:(NSDictionary *)params
         PHCachingImageManager *cacheManager = [PHCachingImageManagerInstance sharedCachingManager];
         
         PHImageRequestOptions *_options = [[PHImageRequestOptions alloc] init];
-        _options.synchronous = false;
         _options.resizeMode = PHImageRequestOptionsResizeModeExact;
-        _options.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
 
         if(prepareForSizeDisplay.width != 0 && prepareForSizeDisplay.height != 0) {
             if(prepareScale < 0.1) {

@@ -92,6 +92,10 @@ class RNPhotosFramework {
         return RNPFManager.removeAssetsFromAlbum(params);
     }
 
+    stopCachingImagesForAllAssets() {
+        return RNPFManager.stopCachingImagesForAllAssets();
+    }
+
     getAssets(params) {
         //This might look hacky, but it is!
         //We default to assetDisplayStartToEnd == false because photos framework will by default
