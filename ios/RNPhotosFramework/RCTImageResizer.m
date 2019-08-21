@@ -1,6 +1,9 @@
 #include "RCTImageResizer.h"
 #include "ImageHelpers.h"
+#if __has_include(<React/RCTImageLoader.h>)
 #import <React/RCTImageLoader.h>
+#else
+#import <React-RCTImage/React/RCTImageLoader.h>
 
 @implementation RNPFImageResizer
 
