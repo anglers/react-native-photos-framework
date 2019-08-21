@@ -3,17 +3,9 @@
 
 #import <React/RCTConvert.h>
 #import <React/RCTDefines.h>
-#if __has_include(<React/RCTImageLoader.h>)
 #import <React/RCTImageLoader.h>
-#else
-#import <React-RCTImage/React/RCTImageLoader.h>
-#endif
 #import <React/RCTLog.h>
-#if __has_include(<React/RCTNetworking.h>)
 #import <React/RCTNetworking.h>
-#else
-#import <React-RCTNetwork/React/RCTNetworking.h>
-#endif
 #import <React/RCTUtils.h>
 #import "RNPFGlobals.h"
 #import "PHAssetsService.h"
