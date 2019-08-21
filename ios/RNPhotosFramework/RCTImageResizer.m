@@ -4,6 +4,7 @@
 #import <React/RCTImageLoader.h>
 #else
 #import <React-RCTImage/React/RCTImageLoader.h>
+#endif
 
 @implementation RNPFImageResizer
 

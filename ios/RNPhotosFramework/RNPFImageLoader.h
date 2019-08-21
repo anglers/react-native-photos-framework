@@ -2,6 +2,7 @@
 #import <React/RCTImageLoader.h>
 #else
 #import <React-RCTImage/React/RCTImageLoader.h>
+#endif
 #import "PHCachingImageManagerInstance.h"
 
 typedef void (^RNPFDataLoaderCompletionBlock)(NSError *error, NSData *data);
