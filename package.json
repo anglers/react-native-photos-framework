@@ -4,7 +4,7 @@
     "type": "git",
     "url": "https://github.com/olofd/react-native-photos-framework.git"
   },
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "Use Apples Photos Framework with react-native to fetch media from CameraRoll and iCloud",
   "author": "Olof Dahlbom olof.dahlbom@me.com",
   "nativePackage": true,
@@ -27,7 +27,6 @@
     "LICENSE",
     "ios/",
     "src/",
-    "local-cli/",
     "index.js",
     "README.md",
     "install.js",
@@ -53,8 +52,7 @@
   "jest": {
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/example/",
-      "local-cli/"
+      "/example/"
     ]
   }
 }
