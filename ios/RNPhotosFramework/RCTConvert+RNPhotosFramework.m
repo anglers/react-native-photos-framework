@@ -123,7 +123,10 @@ RCT_ENUM_CONVERTER_WITH_REVERSED(PHAssetResourceType, (@{
                                                        @"adjustmentBasePhoto": @(PHAssetResourceTypeAdjustmentBasePhoto),
                                                        @"pairedVideo": @(PHAssetResourceTypePairedVideo),
                                                        @"fullSizePairedVideo": @(PHAssetResourceTypeFullSizePairedVideo),
-                                                       @"adjustmentBasePairedVideo": @(PHAssetResourceTypeAdjustmentBasePairedVideo)
+                                                       @"adjustmentBasePairedVideo": @(PHAssetResourceTypeAdjustmentBasePairedVideo),
+                                                       @"unknown": @13, // Unused ?
+                                                       @"unknown": @14, // Unused ?
+                                                       @"unknown": @15, // Unused ?
                                                        @"appleAdjustmentEnvelope": @16 // No constant for this yet?
                                                        }), PHAssetResourceTypePhoto, integerValue)
 
