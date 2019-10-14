@@ -177,7 +177,8 @@
 +(void)extendAssetDictWithPhotoAssetEditingExif:(NSMutableDictionary *)dictToExtend andPHAsset:(PHAsset *)asset andCompletionBlock:(void(^)(NSMutableDictionary * dict))completeBlock  {
   __block NSMutableDictionary * dictionaryToExtendBlocked = dictToExtend;
   [PHAssetsService requestEditingExifWithCompletionBlock:^(NSDictionary<NSString *,id> *dict) {
-    [dictionaryToExtendBlocked setObject:dict forKey:@"imageExif"];
+    if(dict != nil)
+      [dictionaryToExtendBlocked setObject:dict forKey:@"imageExif"];
     completeBlock(dictionaryToExtendBlocked);
   } andAsset:asset];
 }
