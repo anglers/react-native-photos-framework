@@ -100,7 +100,10 @@ RCT_ENUM_CONVERTER_WITH_REVERSED(PHAssetCollectionSubtype, (@{
                                                 @"smartAlbumSelfPortraits": @(PHAssetCollectionSubtypeSmartAlbumSelfPortraits),
                                                 @"smartAlbumScreenshots": @(PHAssetCollectionSubtypeSmartAlbumScreenshots),
                                                 @"smartAlbumDepthEffect" : @(PHAssetCollectionSubtypeSmartAlbumDepthEffect),
-                                                @"smartAlbumLivePhotos" : @(PHAssetCollectionSubtypeSmartAlbumLivePhotos)
+                                                @"smartAlbumLivePhotos" : @(PHAssetCollectionSubtypeSmartAlbumLivePhotos),
+                                                @"smartAlbumAnimated": @(PHAssetCollectionSubtypeSmartAlbumAnimated),
+                                                @"smartAlbumLongExposures": @(PHAssetCollectionSubtypeSmartAlbumLongExposures),
+                                                @"smartAlbumUnableToUpload": @(PHAssetCollectionSubtypeSmartAlbumUnableToUpload)
                                                 
                                                 }), PHCollectionListSubtypeAny, integerValue)
 
@@ -124,6 +127,7 @@ RCT_ENUM_CONVERTER_WITH_REVERSED(PHAssetResourceType, (@{
                                                        @"pairedVideo": @(PHAssetResourceTypePairedVideo),
                                                        @"fullSizePairedVideo": @(PHAssetResourceTypeFullSizePairedVideo),
                                                        @"adjustmentBasePairedVideo": @(PHAssetResourceTypeAdjustmentBasePairedVideo),
+                                                       @"adjustmentBaseVideo": @(PHAssetResourceTypeAdjustmentBaseVideo),
                                                        @"unknown": @13, // Unused ?
                                                        @"unknown": @14, // Unused ?
                                                        @"unknown": @15, // Unused ?
