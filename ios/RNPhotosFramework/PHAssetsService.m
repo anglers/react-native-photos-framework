@@ -145,18 +145,24 @@
         
         NSString *mimeType = (NSString *)[NSNull null];
         CFStringRef mimeTypeCString = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef _Nonnull)(resourceMetadata.uniformTypeIdentifier), kUTTagClassMIMEType);
-        if(mimeTypeCString != nil) {
+        if(mimeTypeCString != nil)
+        {
             mimeType = (__bridge NSString *)(mimeTypeCString);
-        }
-        
-        [arrayWithResourcesMetadata addObject:@{
+            NSString *resourceTypeString = [[RCTConvert PHAssetResourceTypeValuesReversed] objectForKey:@(resourceMetadata.type)];
+          
+            // Resource type not defined in Apple Photo Framework, fallback to "unknown"
+            if(resourceTypeString == nil)
+              resourceTypeString = @"unknown";
+              
+            [arrayWithResourcesMetadata addObject:@{
                                                      @"originalFilename" : resourceMetadata.originalFilename,
                                                      @"assetLocalIdentifier" : resourceMetadata.assetLocalIdentifier,
                                                      @"uniformTypeIdentifier" : resourceMetadata.uniformTypeIdentifier,
-                                                     @"type" : [[RCTConvert PHAssetResourceTypeValuesReversed] objectForKey:@(resourceMetadata.type)],
+                                                     @"type" : resourceTypeString,
                                                      @"mimeType" : mimeType,
                                                      @"fileExtension" : [resourceMetadata.originalFilename pathExtension]
-                                                     }];
+                                                   }];
+        }
     }
 
     [dictToExtend setObject:arrayWithResourcesMetadata forKey:@"resourcesMetadata"];
