@@ -1,4 +1,3 @@
-import Album from './album';
 import photoAppSort from './photo-app-sort';
 import instagramAppSort from './instagram-app-sort';
 import EventEmitter from '../event-emitter';

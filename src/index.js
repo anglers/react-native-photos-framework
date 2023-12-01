@@ -1,12 +1,8 @@
-import ReactPropTypes from "prop-types";
 import { NativeEventEmitter, NativeModules, Platform } from "react-native";
-import Asset from "./asset";
-import Album from "./album";
-import AlbumQueryResult from "./album-query-result";
-import AlbumQueryResultCollection from "./album-query-result-collection";
 import EventEmitter from "../event-emitter";
-import ImageAsset from "./image-asset";
-import VideoAsset from "./video-asset";
+import AlbumQueryResultBase from './album-query-result-base';
+import AlbumQueryResultCollection from "./album-query-result-collection";
+import { collectionArrayObserverHandler } from './change-observer-handler';
 import videoPropsResolver from "./video-props-resolver";
 import uuidGenerator from "./uuid-generator";
 
@@ -17,6 +13,393 @@ if (!RNPFManager && Platform.OS === "ios") {
     );
 }
 export const eventEmitter = new EventEmitter();
+
+// Asset
+export class Asset {
+    static scheme = "photos://";
+    constructor(assetObj) {
+        Object.assign(this, assetObj);
+        this._assetObj = assetObj;
+    }
+
+    get uri() {
+        if (this.lastOptions === this.currentOptions && this._uri) {
+            return this._uri;
+        }
+        let queryString;
+        if (this.currentOptions) {
+            this.lastOptions = this.currentOptions;
+            queryString = this.serialize(this.currentOptions);
+        }
+        this._uri = Asset.scheme + this.localIdentifier;
+        if (queryString) {
+            this._uri = this._uri + `?${queryString}`;
+        }
+        return this._uri;
+    }
+
+    //This is here in base-class, videos can display thumb.
+    get image() {
+        if (this._imageRef) {
+            return this._imageRef;
+        }
+        const {
+            width,
+            height,
+            uri
+        } = this;
+        this._imageRef = {
+            width,
+            height,
+            uri,
+            name: 'test.jpg'
+        };
+        return this._imageRef;
+    }
+
+    get creationDate() {
+        return this.toJsDate('creationDateUTCSeconds', '_creationDate');
+    }
+
+    get modificationDate() {
+        return this.toJsDate('modificationDateUTCSeconds', '_modificationDate');
+    }
+
+    toJsDate(UTCProperty, cachedProperty) {
+        if (!this[UTCProperty]) {
+            return undefined;
+        }
+        if (!this[cachedProperty]) {
+            const utcSecondsCreated = this[UTCProperty];
+            this[cachedProperty] = new Date(0);
+            this[cachedProperty].setUTCSeconds(utcSecondsCreated);
+        }
+        return this[cachedProperty];
+    }
+
+    getMetadata() {
+        return this._fetchExtraData('getAssetsMetadata', 'creationDate');
+    }
+
+    refreshMetadata() {
+        return this._fetchExtraData('getAssetsMetadata', 'creationDate', true);
+    }
+
+    getResourcesMetadata() {
+        return this._fetchExtraData('getAssetsResourcesMetadata', 'resourcesMetadata');
+    }
+
+    getExifData() {
+        return this._fetchExtraData('getExifData', 'exif');
+    }
+
+    _fetchExtraData(nativeMethod, alreadyLoadedProperty, force) {
+        return new Promise((resolve, reject) => {
+            if (!force && this[alreadyLoadedProperty]) {
+                //This means we alread have fetched metadata.
+                //Resolve directly
+                resolve(this);
+                return;
+            }
+            if(!NativeApi[nativeMethod])
+            {
+                console.log("Method '" + nativeMethod  + "' not found", NativeApi);
+                reject();
+            }
+            return resolve(NativeApi[nativeMethod]([this.localIdentifier])
+                .then((metadataObjs) => {
+                    if (metadataObjs && metadataObjs[this.localIdentifier]) {
+                        Object.assign(this, metadataObjs[this.localIdentifier]);
+                    }
+                    return this;
+                }));
+        });
+    }
+
+    serialize(obj) {
+        var str = [];
+        for (var p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                str.push(encodeURIComponent(p) + "=" + encodeURIComponent(
+                    obj[p]));
+            }
+        }
+        return str.join("&");
+    }
+
+    withOptions(options) {
+        this.currentOptions = options;
+        return this;
+    }
+
+    delete() {
+        return NativeApi.deleteAssets([this]);
+    }
+
+    setHidden(hidden) {
+        return this._updateProperty('hidden', hidden, true);
+    }
+
+    setFavorite(favorite) {
+        return this._updateProperty('favorite', favorite, true);
+    }
+
+    setCreationDate(jsDate) {
+        return this._updateProperty('creationDate', jsDate, false);
+    }
+
+    setLocation(latLngObj) {
+        return this._updateProperty('location', latLngObj, false);
+    }
+
+    //name and extension are optional
+    saveAssetToDisk(options, onProgress, generateFileName) {
+        return NativeApi.saveAssetsToDisk([{
+            asset: this,
+            options: options
+        }], {
+                onProgress: onProgress
+            }, generateFileName).then((results) => {
+                return results[0];
+            });
+    }
+
+    _updateProperty(property, value, precheckValue) {
+        return new Promise((resolve, reject) => {
+            if (precheckValue && this[property] === value) {
+                return resolve({
+                    success: true,
+                    error: ''
+                });
+            }
+            return NativeApi.updateAssets({
+                [this.localIdentifier]: {
+                    [property]: value
+                }
+            }).then(resolve, reject);
+        });
+    }
+}
+
+// ImageAsset
+export class ImageAsset extends Asset {
+    constructor(assetObj, options) {
+        super(assetObj, options);
+    }
+
+    getImageMetadata() {
+        return this._fetchExtraData('getImageAssetsMetadata', 'imageMetadata');
+    }
+} 
+
+// videoAsset
+export class VideoAsset extends Asset {
+    constructor(assetObj, options) {
+        super(assetObj, options);
+    }
+
+    get video() {
+        if (this._videoRef) {
+            return this._videoRef;
+        }
+        this._videoRef = {
+            uri : this.uri,
+            type : ''
+        };
+        return this._videoRef;
+    }
+}
+
+// Album
+export class Album extends EventEmitter {
+
+    constructor(obj, fetchOptions, eventEmitter) {
+        super();
+        this._fetchOptions = fetchOptions;
+        Object.assign(this, obj);
+        if (this.previewAssets) {
+            this.previewAssets = this
+                .previewAssets
+                .map(NativeApi.createJsAsset);
+            if (this.previewAssets.length) {
+                this.previewAsset = this.previewAssets[0];
+            }
+        }
+
+        eventEmitter.addListener('onObjectChange', (changeDetails) => {
+            if (changeDetails._cacheKey === this._cacheKey) {
+                this._emitChange(changeDetails, (assetArray, callback, fetchOptions) => {
+                    if (assetArray) {
+                        return assetArrayObserverHandler(
+                            changeDetails, assetArray,
+                            NativeApi.createJsAsset, (indecies, callback) => {
+                                //The update algo has requested new assets.
+                                return this.newAssetsRequested(indecies, fetchOptions, callback);
+                            }, this.perferedSortOrder).then(updatedArray => {
+                            callback && callback(updatedArray);
+                            return updatedArray;
+                        });
+                    }
+                    return assetArray;
+                }, this);
+            }
+        });
+    }
+
+    newAssetsRequested(indecies, fetchOptions, callback) {
+        const fetchOptionsWithIndecies = {...fetchOptions, indecies : [...indecies]};
+        return this.getAssetsWithIndecies(fetchOptionsWithIndecies).then((assets) => {
+            callback && callback(assets);
+            return assets;
+        });
+    }
+
+    deleteContentPermitted() {
+        return this._canPerformOperation(0);
+    }
+
+    removeContentPermitted() {
+        return this._canPerformOperation(1);
+    }
+
+    addContentPermitted() {
+        return this._canPerformOperation(2);
+    }
+
+    createContentPermitted() {
+        return this._canPerformOperation(3);
+    }
+
+    reArrangeContentPermitted() {
+        return this._canPerformOperation(4);
+    }
+
+    deletePermitted() {
+        return this._canPerformOperation(5);
+    }
+
+    renamePermitted() {
+        return this._canPerformOperation(6);
+    }
+
+    _canPerformOperation(index) {
+        return this.permittedOperations && this.permittedOperations[index];
+    }
+
+    stopTracking() {
+        return NativeApi.stopTracking(this._cacheKey);
+    }
+
+    getAssets(params) {
+        this.perferedSortOrder = params.assetDisplayBottomUp === params.assetDisplayStartToEnd ? 'reversed' : 'normal';
+        const trackAssets = params.trackInsertsAndDeletes || params.trackAssetsChanges;
+        if (trackAssets && !this._cacheKey) {
+            this._cacheKey = uuidGenerator();
+        }
+        return NativeApi.getAssets({
+            fetchOptions: this._fetchOptions,
+            ...params,
+            _cacheKey: this._cacheKey,
+            albumLocalIdentifier: this.localIdentifier
+        });
+    }
+
+    getAssetsWithIndecies(params) {
+        const trackAssets = params.trackInsertsAndDeletes || params.trackAssetsChanges;
+        if (trackAssets && !this._cacheKey) {
+            this._cacheKey = uuidGenerator();
+        }
+        return NativeApi.getAssetsWithIndecies({
+            fetchOptions: this._fetchOptions,
+            ...params,
+            _cacheKey: this._cacheKey,
+            albumLocalIdentifier: this.localIdentifier
+        });
+    }
+
+    addAsset(asset) {
+        return this.addAssets([asset]);
+    }
+
+    addAssets(assets) {
+        return NativeApi.addAssetsToAlbum({
+            assets: assets.map(asset => asset.localIdentifier),
+            _cacheKey: this._cacheKey,
+            albumLocalIdentifier: this.localIdentifier
+        });
+    }
+
+    removeAsset(asset) {
+        return this.removeAssets([asset]);
+    }
+
+    removeAssets(assets) {
+        return NativeApi.removeAssetsFromAlbum({
+            assets: assets.map(asset => asset.localIdentifier),
+            _cacheKey: this._cacheKey,
+            albumLocalIdentifier: this.localIdentifier
+        });
+    }
+
+    updateTitle(newTitle) {
+        return NativeApi.updateAlbumTitle({
+            newTitle: newTitle,
+            _cacheKey: this._cacheKey,
+            albumLocalIdentifier: this.localIdentifier
+        });
+    }
+
+    delete() {
+        return NativeApi.deleteAlbums([this]);
+    }
+
+    onChange(cb) {
+        this.addListener('onChange', cb);
+        return () => this.removeListener('onChange', cb);
+    }
+
+    _emitChange(...args) {
+        this.emit('onChange', ...args);
+    }
+}
+
+// AlbumQueryResult
+export class AlbumQueryResult extends AlbumQueryResultBase {
+    constructor(obj, fetchParams, eventEmitter) {
+        super();
+        this.eventEmitter = eventEmitter;
+        this._fetchParams = fetchParams || {};
+        Object.assign(this, obj);
+        this._albumNativeObjs = this.albums;
+        this.albums = this
+            ._albumNativeObjs
+            .map(albumObj => new Album(albumObj, this._fetchParams.assetFetchOptions,
+                eventEmitter));
+        eventEmitter.addListener('onObjectChange', (changeDetails) => {
+            if (this._cacheKey === changeDetails._cacheKey) {
+                this.emit('onChange', changeDetails, (callback) => {
+                    this.applyChangeDetails(changeDetails, callback);
+                }, this);
+            }
+        });
+    }
+
+    stopTracking() {
+        return NativeApi.stopTracking(this._cacheKey);
+    }
+
+    applyChangeDetails(changeDetails, callback) {
+        return collectionArrayObserverHandler(changeDetails, this.albums, (
+            nativeObj) => {
+            return new Album(nativeObj, this._fetchParams.fetchOptions,
+                this.eventEmitter);
+        }).then((albums) => {
+            this.albums = albums;
+            callback && callback(this);
+        });
+    }
+}
+
 
 // Main JS-implementation Most methods are written to handle array of input
 // operations.

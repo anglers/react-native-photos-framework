@@ -1,4 +1,3 @@
-import Album from './album';
 import AlbumQueryResultBase from './album-query-result-base';
 
 export default class AlbumQueryResultCollection extends AlbumQueryResultBase {

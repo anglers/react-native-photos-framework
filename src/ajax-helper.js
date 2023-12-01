@@ -1,5 +1,5 @@
-import Asset from './asset';
 import NativeApi from './index';
+
 export function postAssets(assets, {
     url,
     method,  
